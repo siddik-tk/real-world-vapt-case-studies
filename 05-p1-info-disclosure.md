@@ -1,20 +1,23 @@
-# P1 Information Disclosure via Debug Page
+# P1 Information Disclosure — Flask DEBUG=True in Production
 
-While exploring public endpoints, I interacted with the HR assistant interface without authentication.
+While testing the HackwithIndia VDP target, I came across an HR assistant 
+interface that didn't require authentication to access.
 
-I tried triggering unexpected input to see how the system handles errors.
+I sent some unexpected input to see how the app handles errors — and instead 
+of a generic 500 page, I got a full Flask debug traceback dumped in the response.
 
-The application returned an HTTP 500 error with a full backend stack trace.
+The trace exposed file paths, internal module structure, environment config 
+variables, the app's SECRET_KEY, and JWT signing key material. All of it. 
+In plain text. On a live production domain.
 
-The response exposed internal details such as application structure and configuration data.
+Flask's debug mode is meant for local development. Someone deployed it to 
+production and left it on.
 
-This indicates debug or verbose error handling is enabled in production.
+The SECRET_KEY and JWT material meant session cookies and tokens could be 
+forged — admin impersonation included. I reported it immediately.
 
-Such information can help attackers understand the backend and plan targeted attacks.
+Validated as P1 on Bugcrowd (HackwithIndia VDP). Reported January 23, 
+resolved February 3.
 
-This issue was reported under a VDP and validated as P1.
-
-Fix:
-- Disable debug mode in production
-- Replace detailed error messages with generic responses
-- Log errors internally instead of exposing them to users
+Fix: DEBUG=False in production. Rotate exposed secrets. Generic error pages 
+facing users, verbose logs staying server-side.
