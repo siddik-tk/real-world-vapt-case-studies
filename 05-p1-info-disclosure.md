@@ -1,23 +1,32 @@
-# P1 Information Disclosure — Flask DEBUG=True in Production
+Title: Sensitive Information Disclosure via Flask Debug Mode Enabled in Production
 
-While testing the HackwithIndia VDP target, I came across an HR assistant 
-interface that didn't require authentication to access.
+Vulnerability Type:
+Information Disclosure / Misconfiguration
 
-I sent some unexpected input to see how the app handles errors — and instead 
-of a generic 500 page, I got a full Flask debug traceback dumped in the response.
+Summary:
+The application was running with Flask DEBUG mode enabled in production, exposing sensitive internal data including SECRET_KEY and JWT signing material.
 
-The trace exposed file paths, internal module structure, environment config 
-variables, the app's SECRET_KEY, and JWT signing key material. All of it. 
-In plain text. On a live production domain.
+Technical Analysis:
+Improper deployment configuration allowed debug traceback pages to be publicly accessible. These revealed:
+- Application file paths
+- Environment variables
+- SECRET_KEY
+- JWT signing keys
 
-Flask's debug mode is meant for local development. Someone deployed it to 
-production and left it on.
+Steps to Reproduce:
+1. Access unauthenticated endpoint
+2. Trigger error via malformed input
+3. Observe full debug traceback in response
 
-The SECRET_KEY and JWT material meant session cookies and tokens could be 
-forged — admin impersonation included. I reported it immediately.
+Impact:
+- Exposure of cryptographic secrets
+- Potential session/token forgery
+- Risk of full account compromise including admin access
 
-Validated as P1 on Bugcrowd (HackwithIndia VDP). Reported January 23, 
-resolved February 3.
+Severity:
+Critical (P1 – validated)
 
-Fix: DEBUG=False in production. Rotate exposed secrets. Generic error pages 
-facing users, verbose logs staying server-side.
+Remediation:
+- Disable debug mode in production
+- Rotate all exposed secrets immediately
+- Implement generic error handling

@@ -1,25 +1,28 @@
-# API Logic Issue – Success Response for Invalid Input
+Title: Improper API Validation Leading to False Success Responses
 
-While testing API endpoints, I tried accessing resources using invalid and non-existent IDs.
+Vulnerability Type:
+Business Logic / Input Validation Failure
 
-I also tested how the API behaves with malformed input.
+Summary:
+The API returns success responses for invalid or non-existent resource IDs and does not properly handle malformed input.
 
-I expected the API to return proper error responses like 400 or 404 — but it didn’t.
+Technical Analysis:
+Backend does not verify whether the operation actually succeeded before returning a success response. Some malformed inputs also cause request timeouts.
 
-For the endpoint /notifications/read/:id:
-- When using an invalid or non-existent ID, the API still returned success ("marked as read")
-- In some cases, malformed input caused the request to hang until timeout
+Steps to Reproduce:
+1. Send request to /notifications/read/:id with invalid ID
+2. Observe success response despite non-existent resource
+3. Send malformed input → observe hanging request
 
-Authorization checks were working correctly, so this is not an IDOR.
-
-The issue is that the backend is not validating whether the operation actually succeeded.
-
-This leads to:
-- Misleading success responses
+Impact:
+- Misleading system state
 - Inconsistent API behavior
-- Potential resource exhaustion due to hanging requests
+- Potential resource exhaustion
 
-Fix:
-- Validate resource existence before returning success
-- Return proper HTTP status codes (400, 404)
-- Handle malformed input gracefully
+Severity:
+Medium
+
+Remediation:
+- Validate resource existence
+- Return correct HTTP status codes
+- Handle malformed input safely

@@ -1,20 +1,30 @@
-# Access Token Remains Valid After Logout
+Title: Access Token Remains Valid After Logout
 
-While testing session handling, I wanted to verify whether logout properly invalidates access tokens.
+Vulnerability Type:
+Session Management Failure
 
-I logged in, captured the token, then called the logout endpoint.
+Summary:
+Access tokens are not invalidated on logout, allowing continued use until expiration.
 
-I expected the token to be invalidated immediately — but it wasn’t.
+Technical Analysis:
+Logout does not revoke or blacklist issued tokens. The backend continues to accept tokens even after session termination.
 
-I reused the same token on endpoints like /auth/me and /users/me, and the response returned HTTP 200 OK with valid user data.
+Steps to Reproduce:
+1. Login and capture token
+2. Perform logout
+3. Reuse token on:
+   - GET /auth/me
+   - GET /users/me
+4. Observe valid responses
 
-This shows that logout is not invalidating the token server-side.
+Impact:
+- Session hijacking risk
+- Unauthorized access after logout
+- Weak session termination controls
 
-The token remains valid until expiry, meaning a stolen token can still be used even after logout.
+Severity:
+High
 
-This weakens session security and allows continued access after user logout.
-
-Fix:
-- Invalidate tokens on logout (server-side)
-- Maintain token blacklist or session tracking
-- Use shorter token lifetimes with refresh logic
+Remediation:
+- Implement token invalidation/blacklisting
+- Track active sessions server-side

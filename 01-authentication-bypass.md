@@ -1,19 +1,30 @@
-# Authentication State Desynchronization (2FA Bypass)
+Title: 2FA Bypass via Authentication State Desynchronization
 
-While testing authentication flows, I wanted to see what happens when a user enables 2FA during an active session.
+Vulnerability Type:
+Broken Authentication / Session Management
 
-I logged in normally, captured the access token, then enabled 2FA via the /toggle2fa endpoint without completing OTP verification.
+Summary:
+After enabling 2FA, previously issued access tokens remain valid and are not re-evaluated against the updated authentication state. This allows continued access to protected endpoints without completing 2FA verification.
 
-I expected the token to be invalidated or restricted — but it wasn’t.
+Technical Analysis:
+The application does not bind token validity to the current authentication state. When 2FA is enabled mid-session, existing tokens are not invalidated or restricted, resulting in a desynchronization between session state and security controls.
 
-I reused the same token on protected endpoints like /auth/me and profile update, and the request returned HTTP 200 OK with valid user data.
+Steps to Reproduce:
+1. Login and capture access token
+2. Enable 2FA via /auth/toggle2fa (do not complete verification)
+3. Reuse the original token on:
+   - GET /auth/me
+   - PATCH /profile/update
+4. Observe successful responses (HTTP 200)
 
-This shows the backend is not linking token validity with the current authentication state (2FA enabled but not verified).
+Impact:
+- Bypass of 2FA enforcement
+- Continued access using pre-2FA tokens
+- Weakens account security against token compromise
 
-If an attacker gets a token before 2FA is enabled, they can continue using it even after 2FA enforcement.
+Severity:
+High
 
-In this case, the token expiry was around 15 minutes, so exploitation depends on token theft within that window — but still weakens the purpose of 2FA.
-
-Fix:
-- Invalidate all active tokens when 2FA is enabled
-- Bind token validation to 2FA verification status
+Remediation:
+- Invalidate all active tokens when enabling 2FA
+- Enforce 2FA verification status during token validation
